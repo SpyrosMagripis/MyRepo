@@ -15,6 +15,8 @@ A simple, classic Tetris game built to run directly in your web browser. No inst
 - Line clearing and scoring
 - Game over detection
 - Keyboard controls
+- Optional 8-bit music with on/off toggle
+- Rock-break animation on hard drop line clears
 
 ## 🚀 Getting Started
 
