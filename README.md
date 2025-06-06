@@ -96,10 +96,3 @@ MIT License — feel free to build, modify, or deploy your own version.
 ---
 
 Enjoy classic Tetris in the browser! 🎮
-
-```
-
----
-
-Let me know if you'd like help generating the `index.html`, `style.css`, or `script.js` files to go with this.
-```
