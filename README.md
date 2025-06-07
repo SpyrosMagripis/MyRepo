@@ -15,6 +15,8 @@ A simple, classic Tetris game built to run directly in your web browser. No inst
 - Line clearing and scoring
 - Game over detection
 - Keyboard controls
+- Optional 8-bit music with on/off toggle
+- Rock-break animation on hard drop line clears
 
 ## 🚀 Getting Started
 
@@ -88,6 +90,13 @@ Example for GitHub Pages:
 ## 🧩 Want to Contribute?
 
 Pull requests are welcome! Feel free to suggest new features or improvements.
+
+## Developer Notes
+
+- The music toggle uses a square-wave melody via the Web Audio API. Some browsers block playback until you click the page.
+- The notes array now holds a 100-note tune (around 30 seconds) before looping.
+- Hard-drop line clears trigger a rock-break effect. Soft drops won't show it.
+- Timings are lightweight so you can tweak the tempo or visuals easily.
 
 ## 📜 License
 

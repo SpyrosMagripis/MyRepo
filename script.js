@@ -3,6 +3,7 @@ const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
 const pauseBtn = document.getElementById('pause-btn');
+const musicBtn = document.getElementById('music-btn');
 
 const COLS = 10;
 const ROWS = 20;
@@ -15,6 +16,33 @@ let level = 1;
 let dropInterval = 1000;
 let dropTimer;
 let isPaused = false;
+let lastMoveHardDrop = false;
+
+// music setup
+let audioCtx;
+let musicInterval;
+const notes = [
+    261.63, 293.66, 329.63, 392.0, 523.25,
+    392.0, 329.63, 293.66, 261.63, 392.0,
+    523.25, 659.25, 523.25, 392.0, 329.63,
+    261.63, 329.63, 392.0, 523.25, 392.0,
+    329.63, 261.63, 392.0, 261.63, 329.63,
+    261.63, 293.66, 329.63, 392.0, 523.25,
+    392.0, 329.63, 293.66, 261.63, 392.0,
+    523.25, 659.25, 523.25, 392.0, 329.63,
+    261.63, 329.63, 392.0, 523.25, 392.0,
+    329.63, 261.63, 392.0, 261.63, 329.63,
+    261.63, 293.66, 329.63, 392.0, 523.25,
+    392.0, 329.63, 293.66, 261.63, 392.0,
+    523.25, 659.25, 523.25, 392.0, 329.63,
+    261.63, 329.63, 392.0, 523.25, 392.0,
+    329.63, 261.63, 392.0, 261.63, 329.63,
+    261.63, 293.66, 329.63, 392.0, 523.25,
+    392.0, 329.63, 293.66, 261.63, 392.0,
+    523.25, 659.25, 523.25, 392.0, 329.63,
+    261.63, 329.63, 392.0, 523.25, 392.0,
+    329.63, 261.63, 392.0, 261.63, 329.63
+]; // 100-note melody (~30s)
 
 const tetrominoes = {
     I: [
@@ -118,26 +146,46 @@ function placePiece() {
 }
 
 function removeFullLines() {
-    let cleared = 0;
-    grid = grid.filter(row => {
-        if (row.every(cell => cell)) {
-            cleared++;
-            return false;
+    const rowsToClear = [];
+    const rowData = [];
+    for (let y = 0; y < ROWS; y++) {
+        if (grid[y].every(cell => cell)) {
+            rowsToClear.push(y);
+            rowData.push({ index: y, cells: [...grid[y]] });
         }
-        return true;
-    });
+    }
+    if (rowsToClear.length === 0) return [];
+    rowsToClear.sort((a, b) => a - b);
+    for (let i = rowsToClear.length - 1; i >= 0; i--) {
+        grid.splice(rowsToClear[i], 1);
+    }
     while (grid.length < ROWS) {
         grid.unshift(Array(COLS).fill(0));
     }
-    if (cleared > 0) {
-        score += cleared * 100;
-        lines += cleared;
-        level = 1 + Math.floor(lines / 10);
-        dropInterval = 1000 - (level - 1) * 100;
-        clearInterval(dropTimer);
-        dropTimer = setInterval(tick, dropInterval);
-        updateScore();
-    }
+    score += rowsToClear.length * 100;
+    lines += rowsToClear.length;
+    level = 1 + Math.floor(lines / 10);
+    dropInterval = 1000 - (level - 1) * 100;
+    clearInterval(dropTimer);
+    dropTimer = setInterval(tick, dropInterval);
+    updateScore();
+    return rowData;
+}
+
+function showLineBreakEffect(rows) {
+    rows.forEach(row => {
+        const effect = document.createElement('div');
+        effect.classList.add('row-effect');
+        effect.style.top = `${row.index * BLOCK_SIZE}px`;
+        for (let x = 0; x < COLS; x++) {
+            const frag = document.createElement('div');
+            frag.classList.add('fragment');
+            frag.style.backgroundColor = row.cells[x] || '#555';
+            effect.appendChild(frag);
+        }
+        board.appendChild(effect);
+        setTimeout(() => board.removeChild(effect), 400);
+    });
 }
 
 function updateScore() {
@@ -214,16 +262,53 @@ function softDrop() {
     }
 }
 function hardDrop() {
+    lastMoveHardDrop = true;
     while (canMove(0,1,rotation)) {
         currentY++;
     }
     placePiece();
-    removeFullLines();
+    const cleared = removeFullLines();
+    lastMoveHardDrop = false;
     spawnPiece();
+    drawBoard();
+    drawPiece();
+    if (cleared.length > 0) {
+        showLineBreakEffect(cleared);
+    }
 }
 function togglePause() {
     isPaused = !isPaused;
     pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+}
+
+function playNote(freq, duration) {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration / 1000);
+}
+
+function startMusic() {
+    if (musicInterval) return;
+    let i = 0;
+    musicInterval = setInterval(() => {
+        playNote(notes[i], 250);
+        i = (i + 1) % notes.length;
+    }, 300);
+}
+
+function stopMusic() {
+    if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+    }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -243,7 +328,7 @@ document.addEventListener('keydown', (e) => {
             break;
         case ' ': // Space
             hardDrop();
-            break;
+            return;
         case 'p':
         case 'P':
             togglePause();
@@ -256,5 +341,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 pauseBtn.addEventListener('click', togglePause);
+musicBtn.addEventListener('click', () => {
+    if (musicInterval) {
+        stopMusic();
+        musicBtn.textContent = 'Music On';
+    } else {
+        startMusic();
+        musicBtn.textContent = 'Music Off';
+    }
+});
 
 startGame();
