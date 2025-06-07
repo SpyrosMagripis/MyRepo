@@ -91,6 +91,12 @@ Example for GitHub Pages:
 
 Pull requests are welcome! Feel free to suggest new features or improvements.
 
+## Developer Notes
+
+- The music toggle uses a square-wave melody via the Web Audio API. Some browsers block playback until you click the page.
+- Hard-drop line clears trigger a rock-break effect. Soft drops won't show it.
+- Timings are lightweight so you can tweak the tempo or visuals easily.
+
 ## 📜 License
 
 MIT License — feel free to build, modify, or deploy your own version.
